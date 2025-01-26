@@ -10,7 +10,7 @@ export default function Home() {
           icon="/connections/drive-logo.svg"
           isBeta
         />
-        <PickFiles selectedCount={0} />
+        <PickFiles />
       </div>
     </div>
   );
