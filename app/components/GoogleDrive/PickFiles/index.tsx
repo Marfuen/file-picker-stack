@@ -14,63 +14,57 @@ interface FileListRef {
   selectAll: (checked: boolean) => void;
 }
 
-export const PickFiles = () => {
+export interface PickFilesProps {
+  onCreateKnowledgeBase: (callback: () => Promise<void>) => Promise<void>;
+  isCreatingKnowledgeBase: boolean;
+}
+
+export const PickFiles = ({
+  onCreateKnowledgeBase,
+  isCreatingKnowledgeBase,
+}: PickFilesProps) => {
   const [selectedFiles, setSelectedFiles] = useState<Set<string>>(new Set());
   const [isAllSelected, setIsAllSelected] = useState(false);
+  const [processingFiles, setProcessingFiles] = useState<Set<string>>(
+    new Set()
+  );
   const fileListRef = useRef<FileListRef>(null);
   const { files, isLoading } = useGoogleDriveFiles();
   const {
     createKnowledgeBase,
     getStoredKnowledgeBaseId,
-    files: knowledgeBaseFiles,
-    isLoading: isLoadingFiles,
     error: filesError,
   } = useKnowledgeBase();
-
-  console.log("[PickFiles] knowledgeBaseFiles", knowledgeBaseFiles);
-
-  // Track knowledge base files by path
-  const [knowledgeBaseFilesByPath, setKnowledgeBaseFilesByPath] = useState<
-    Map<string, Set<string>>
-  >(new Map());
 
   const knowledgeBaseId = getStoredKnowledgeBaseId();
   const hasKnowledgeBaseId = knowledgeBaseId !== null;
 
-  // Combine root knowledge base files with folder-specific files
-  const allKnowledgeBaseFileIds = new Set([
-    ...knowledgeBaseFiles.map((file) => file.inode_path.path),
-    ...[...knowledgeBaseFilesByPath.values()].flatMap((set) => [...set]),
-  ]);
-
-  const handleKnowledgeBaseFilesLoad = useCallback(
-    (path: string, fileIds: Set<string>) => {
-      setKnowledgeBaseFilesByPath((prev) => {
-        const next = new Map(prev);
-        next.set(path, fileIds);
-        return next;
-      });
-    },
-    []
-  );
-
   const handleAddOrCreateKnowledgeBase = useCallback(async () => {
     if (selectedFiles.size === 0) return;
 
-    try {
+    // Mark all selected files as processing
+    setProcessingFiles(new Set(selectedFiles));
+
+    const createKnowledgeBaseCallback = async () => {
       await createKnowledgeBase({
         name: "Mariano's knowledge base",
         description: "Mariano's knowledge base",
         connectionSourceIds: Array.from(selectedFiles.values()),
       });
-
       // Clear selection after successful operation
       setSelectedFiles(new Set());
+    };
+
+    try {
+      await onCreateKnowledgeBase(createKnowledgeBaseCallback);
     } catch (error) {
       console.error("Failed to process knowledge base operation:", error);
       // Here you could add a toast notification for the error
+    } finally {
+      // Clear processing state
+      setProcessingFiles(new Set());
     }
-  }, [selectedFiles, createKnowledgeBase]);
+  }, [selectedFiles, createKnowledgeBase, onCreateKnowledgeBase]);
 
   const handleSelectAll = useCallback(
     (checked: boolean) => {
@@ -126,7 +120,7 @@ export const PickFiles = () => {
     [handleSelectionChange]
   );
 
-  if (isLoading || isLoadingFiles) {
+  if (isLoading) {
     return (
       <div className="flex flex-col gap-4 px-2">
         <div className="flex items-center justify-center">
@@ -146,9 +140,6 @@ export const PickFiles = () => {
     );
   }
 
-  console.log("[PickFiles] selectedFiles", selectedFiles);
-  console.log("[PickFiles] knowledgeBaseFiles", knowledgeBaseFiles);
-
   return (
     <div className="flex flex-col gap-4 px-2">
       <SelectAll
@@ -161,19 +152,25 @@ export const PickFiles = () => {
         onSelectionChange={handleSelectionChange}
         files={files ?? []}
         selectedFiles={selectedFiles}
+        processingFiles={processingFiles}
         onSelect={handleSelect}
-        knowledgeBaseFileIds={
-          hasKnowledgeBaseId ? allKnowledgeBaseFileIds : undefined
-        }
-        onKnowledgeBaseFilesLoad={handleKnowledgeBaseFilesLoad}
       />
       <Button
         onClick={handleAddOrCreateKnowledgeBase}
-        disabled={selectedFiles.size === 0}
+        disabled={selectedFiles.size === 0 || isCreatingKnowledgeBase}
       >
-        {hasKnowledgeBaseId
-          ? `Add files (${selectedFiles.size} files)`
-          : `Create knowledge base (${selectedFiles.size} files)`}
+        {isCreatingKnowledgeBase ? (
+          <div className="flex items-center gap-2">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            {hasKnowledgeBaseId
+              ? "Adding files..."
+              : "Creating knowledge base..."}
+          </div>
+        ) : hasKnowledgeBaseId ? (
+          `Add files (${selectedFiles.size} files)`
+        ) : (
+          `Create knowledge base (${selectedFiles.size} files)`
+        )}
       </Button>
     </div>
   );

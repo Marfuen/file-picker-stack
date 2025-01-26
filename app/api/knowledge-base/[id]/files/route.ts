@@ -1,21 +1,16 @@
-"use server";
-
 import { NextRequest, NextResponse } from "next/server";
 import { apiClient } from "@/app/utils/api-client";
 import { AxiosError } from "axios";
 
-type Params = {
-  params: {
-    id: string;
-  };
-};
-
-export async function GET(request: NextRequest, { params }: Params) {
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
     // Get query parameters
     const { searchParams } = new URL(request.url);
     const resourcePath = searchParams.get("resourcePath") || "/";
-    const knowledgeBaseId = params.id;
+    const knowledgeBaseId = (await params).id;
 
     // Get files from knowledge base using the correct path format
     const { data } = await apiClient.get(
@@ -53,12 +48,15 @@ export async function GET(request: NextRequest, { params }: Params) {
   }
 }
 
-export async function DELETE(request: NextRequest, { params }: Params) {
+export async function DELETE(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
-    // Get query parameters
-    const { searchParams } = new URL(request.url);
-    const resourcePath = searchParams.get("resourcePath");
-    const knowledgeBaseId = params.id;
+    const body = await request.json();
+    const { resourcePath } = body;
+
+    const knowledgeBaseId = (await params).id;
 
     if (!resourcePath) {
       return NextResponse.json(
@@ -67,12 +65,13 @@ export async function DELETE(request: NextRequest, { params }: Params) {
       );
     }
 
+    console.log("[DELETE] knowledgeBaseId", knowledgeBaseId);
+    console.log("[DELETE] resourcePath", resourcePath);
+    const url = `/knowledge_bases/${knowledgeBaseId}/resources?resource_path=${resourcePath}`;
+    console.log("[DELETE] url", url);
+
     // Delete file from knowledge base
-    await apiClient.delete(`/knowledge_bases/${knowledgeBaseId}/resources`, {
-      params: {
-        resource_path: resourcePath,
-      },
-    });
+    await apiClient.delete(url);
 
     return NextResponse.json({ success: true });
   } catch (error) {

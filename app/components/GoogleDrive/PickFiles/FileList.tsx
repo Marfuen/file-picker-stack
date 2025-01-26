@@ -19,21 +19,12 @@ import { SearchX } from "lucide-react";
 import { GoogleDriveFile } from "@/app/types/google-drive";
 
 interface ExtendedFileListProps extends FileListProps {
-  knowledgeBaseFileIds?: Set<string>;
-  onKnowledgeBaseFilesLoad?: (path: string, fileIds: Set<string>) => void;
+  processingFiles?: Set<string>;
+  onFileDeleted?: (resourceId: string) => void;
 }
 
 export const FileList = forwardRef<FileListHandle, ExtendedFileListProps>(
-  (
-    {
-      files,
-      selectedFiles,
-      onSelect,
-      knowledgeBaseFileIds,
-      onKnowledgeBaseFilesLoad,
-    },
-    ref
-  ) => {
+  ({ files, selectedFiles, onSelect, processingFiles, onFileDeleted }, ref) => {
     const [search, setSearch] = useState<string>("");
     const [sort, setSort] = useState<"asc" | "desc">("desc");
     const [folderContents, setFolderContents] = useState<
@@ -251,7 +242,7 @@ export const FileList = forwardRef<FileListHandle, ExtendedFileListProps>(
                   folderContents[node.file.resource_id]
                 ) {
                   const contents = folderContents[node.file.resource_id];
-                  contents.forEach((child) => {
+                  contents?.forEach((child) => {
                     pathsToSelect.add(child.inode_path.path);
                   });
                 }
@@ -318,8 +309,8 @@ export const FileList = forwardRef<FileListHandle, ExtendedFileListProps>(
             onSelect={onSelect}
             folderContents={folderContents}
             onFolderLoad={handleFolderLoad}
-            knowledgeBaseFileIds={knowledgeBaseFileIds}
-            onKnowledgeBaseFilesLoad={onKnowledgeBaseFilesLoad}
+            processingFiles={processingFiles}
+            onFileDeleted={onFileDeleted}
           />
         ) : (
           <div className="flex flex-col items-center justify-center gap-4 py-8 text-muted-foreground">

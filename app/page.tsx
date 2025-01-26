@@ -1,5 +1,5 @@
 import { Header } from "./components/Header";
-import { PickFiles } from "./components/GoogleDrive/PickFiles";
+import { KnowledgeBaseWizard } from "./components/KnowledgeBaseWizard";
 
 export default function Home() {
   return (
@@ -10,7 +10,7 @@ export default function Home() {
           icon="/connections/drive-logo.svg"
           isBeta
         />
-        <PickFiles />
+        <KnowledgeBaseWizard />
       </div>
     </div>
   );

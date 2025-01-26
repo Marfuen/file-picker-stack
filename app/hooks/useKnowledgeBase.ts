@@ -203,24 +203,28 @@ export function useKnowledgeBase() {
       if (!knowledgeBaseId) return;
 
       try {
-        await axios.delete(
-          `/api/knowledge-base/${knowledgeBaseId}/files?resourcePath=${encodeURIComponent(
-            resourcePath
-          )}`
-        );
+        await axios.delete(`/api/knowledge-base/${knowledgeBaseId}/files`, {
+          data: { resourcePath },
+        });
 
         // Revalidate files after deletion
         await mutateFiles((currentData) => {
           if (!currentData) return currentData;
+
+          // Filter out the deleted file and any children (if it's a directory)
+          const updatedFiles = currentData.data.filter((file) => {
+            // Remove the exact file
+            if (file.inode_path.path === resourcePath) return false;
+            // Remove any children (files that start with the directory path)
+            if (file.inode_path.path.startsWith(resourcePath + "/"))
+              return false;
+            return true;
+          });
+
           return {
-            data: currentData.data.filter(
-              (file) => file.inode_path.path !== resourcePath
-            ),
+            data: updatedFiles,
           };
         });
-
-        // Trigger sync after deletion
-        await triggerSync();
       } catch (err) {
         const message = axios.isAxiosError(err)
           ? err.response?.data?.error || err.message
@@ -228,7 +232,7 @@ export function useKnowledgeBase() {
         throw new Error(message);
       }
     },
-    [knowledgeBaseId, mutateFiles, triggerSync]
+    [knowledgeBaseId, mutateFiles]
   );
 
   return {

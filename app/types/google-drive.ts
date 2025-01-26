@@ -1,6 +1,7 @@
 export interface GoogleDriveFile {
   resource_id: string;
   inode_id: string;
+  indexed_at: string | null;
   inode_path: {
     path: string;
   };

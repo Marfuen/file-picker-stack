@@ -1,6 +1,4 @@
-import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { Plus } from "lucide-react";
 import Image from "next/image";
 
 interface HeaderProps {
@@ -22,10 +20,11 @@ export const Header: React.FC<HeaderProps> = ({ title, isBeta, icon }) => {
             </div>
           )}
         </div>
-        <Button variant="secondary">
+        {/* Not supported in this project since we're not actually adding accounts */}
+        {/* <Button variant="secondary">
           <Plus className="w-4 h-4" />
           Add account
-        </Button>
+        </Button> */}
       </div>
       <Separator />
     </div>

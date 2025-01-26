@@ -1,5 +1,3 @@
-"use server";
-
 import { NextResponse } from "next/server";
 import { getSession } from "@/app/utils/session";
 import { apiClient } from "@/app/utils/api-client";
