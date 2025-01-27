@@ -23,6 +23,7 @@ export function PickFiles({
 }: PickFilesProps) {
   // State
   const [selectedFiles, setSelectedFiles] = useState<Set<string>>(new Set());
+  const [selectedPaths, setSelectedPaths] = useState<Set<string>>(new Set());
   const [isAllSelected, setIsAllSelected] = useState(false);
   const [processingFiles, setProcessingFiles] = useState<Set<string>>(
     new Set()
@@ -45,30 +46,20 @@ export function PickFiles({
   );
 
   const handleSelect = useCallback(
-    (
-      node: FileTreeNode,
-      resourceId: string,
-      checked: boolean,
-      childResourceIds?: string[]
-    ) => {
+    (node: FileTreeNode, resourceId: string, checked: boolean) => {
       setSelectedFiles((prev) => {
         const next = new Set(prev);
-        // If it's a directory, only add/remove the directory ID
-        if (node.file.inode_type === "directory") {
-          if (checked) {
-            next.add(resourceId);
-          } else {
-            next.delete(resourceId);
-          }
+        const path = node.file.inode_path.path;
+
+        if (checked) {
+          next.add(resourceId);
+          setSelectedPaths((prev) => new Set([...prev, path]));
         } else {
-          // For files, include the file and its children (if any)
-          const ids = [resourceId, ...(childResourceIds || [])];
-          ids.forEach((id) => {
-            if (checked) {
-              next.add(id);
-            } else {
-              next.delete(id);
-            }
+          next.delete(resourceId);
+          setSelectedPaths((prev) => {
+            const next = new Set(prev);
+            next.delete(path);
+            return next;
           });
         }
 
@@ -87,32 +78,70 @@ export function PickFiles({
       const allResourceIds = checked
         ? getAllResourceIds(files)
         : new Set<string>();
+
+      const allPaths = checked
+        ? new Set(files.map((f) => f.inode_path.path))
+        : new Set<string>();
+
       setSelectedFiles(allResourceIds);
+      setSelectedPaths(allPaths);
       setIsAllSelected(checked);
     },
     [files]
   );
 
+  const getEffectiveSelections = useCallback(() => {
+    const effectiveSelections = new Set<string>();
+
+    // Helper function to check if a path is a child of any selected paths
+    const isChildOfSelectedPath = (path: string) => {
+      for (const selectedPath of selectedPaths) {
+        if (path !== selectedPath && path.startsWith(selectedPath + "/")) {
+          return true;
+        }
+      }
+      return false;
+    };
+
+    // Add only files that aren't children of selected folders
+    selectedFiles.forEach((resourceId) => {
+      const file = files?.find((f) => f.resource_id === resourceId);
+      if (file && !isChildOfSelectedPath(file.inode_path.path)) {
+        effectiveSelections.add(resourceId);
+      }
+    });
+
+    return effectiveSelections;
+  }, [selectedFiles, selectedPaths, files]);
+
   const handleAddOrCreateKnowledgeBase = useCallback(async () => {
     if (selectedFiles.size === 0) return;
 
-    setProcessingFiles(new Set(selectedFiles));
+    const effectiveSelections = getEffectiveSelections();
+    setProcessingFiles(effectiveSelections);
 
     try {
       await onCreateKnowledgeBase(async () => {
+        console.log(["Effective selections", effectiveSelections]);
         await createKnowledgeBase({
           name: "Mariano's knowledge base",
           description: "Mariano's knowledge base",
-          connectionSourceIds: Array.from(selectedFiles),
+          connectionSourceIds: Array.from(effectiveSelections),
         });
         setSelectedFiles(new Set());
+        setSelectedPaths(new Set());
       });
     } catch (error) {
       console.error("Failed to process knowledge base operation:", error);
     } finally {
       setProcessingFiles(new Set());
     }
-  }, [selectedFiles, createKnowledgeBase, onCreateKnowledgeBase]);
+  }, [
+    selectedFiles,
+    createKnowledgeBase,
+    onCreateKnowledgeBase,
+    getEffectiveSelections,
+  ]);
 
   // Loading state
   if (isLoading) {
@@ -136,15 +165,16 @@ export function PickFiles({
     );
   }
 
+  const effectiveSelections = getEffectiveSelections();
   const buttonText = isCreatingKnowledgeBase ? (
     <div className="flex items-center gap-2">
       <Loader2 className="h-4 w-4 animate-spin" />
       {knowledgeBaseId ? "Adding files..." : "Creating knowledge base..."}
     </div>
   ) : knowledgeBaseId ? (
-    `Add files (${selectedFiles.size} files)`
+    `Add files (${effectiveSelections.size} files)`
   ) : (
-    `Create knowledge base (${selectedFiles.size} files)`
+    `Create knowledge base (${effectiveSelections.size} files)`
   );
 
   return (
@@ -164,7 +194,7 @@ export function PickFiles({
         </CardHeader>
         <CardContent className="flex flex-col gap-2">
           <SelectAll
-            selectedCount={selectedFiles.size}
+            selectedCount={effectiveSelections.size}
             onSelectAll={handleSelectAll}
             isAllSelected={isAllSelected}
           />
@@ -179,7 +209,7 @@ export function PickFiles({
       </Card>
       <Button
         onClick={handleAddOrCreateKnowledgeBase}
-        disabled={selectedFiles.size === 0 || isCreatingKnowledgeBase}
+        disabled={effectiveSelections.size === 0 || isCreatingKnowledgeBase}
         className="w-full md:w-auto"
       >
         {buttonText}
