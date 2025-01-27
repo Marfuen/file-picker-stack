@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { apiClient } from "@/app/utils/api-client";
-import { AxiosError } from "axios";
+import { AxiosError, AxiosResponse } from "axios";
+import { KnowledgeBaseFile } from "@/app/hooks/useKnowledgeBaseFiles";
 
 export async function GET(
   request: NextRequest,
@@ -13,7 +14,7 @@ export async function GET(
     const knowledgeBaseId = (await params).id;
 
     // Get files from knowledge base using the correct path format
-    const { data } = await apiClient.get(
+    const { data } = await apiClient.get<AxiosResponse<KnowledgeBaseFile[]>>(
       `/knowledge_bases/${knowledgeBaseId}/resources/children`,
       {
         params: {
@@ -22,7 +23,7 @@ export async function GET(
       }
     );
 
-    return NextResponse.json(data);
+    return NextResponse.json(data.data);
   } catch (error) {
     console.error("Error fetching knowledge base files:", error);
 

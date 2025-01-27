@@ -3,6 +3,16 @@ import { getSession } from "@/app/utils/session";
 import { apiClient } from "@/app/utils/api-client";
 import { KnowledgeBaseResponse } from "@/app/types/knowledge-base";
 
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const knowledgeBaseId = searchParams.get("knowledgeBaseId");
+  const { data: knowledgeBase } = await apiClient.get<KnowledgeBaseResponse>(
+    `/knowledge_bases/${knowledgeBaseId}`
+  );
+  console.log("[GET] knowledgeBase", knowledgeBase);
+  return NextResponse.json(knowledgeBase);
+}
+
 export async function POST(request: Request) {
   try {
     const session = await getSession();

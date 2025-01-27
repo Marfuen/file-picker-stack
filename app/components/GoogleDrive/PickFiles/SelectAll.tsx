@@ -1,7 +1,6 @@
 "use client";
 
 import { Checkbox } from "@/components/ui/checkbox";
-import { Separator } from "@/components/ui/separator";
 
 interface SelectAllProps {
   selectedCount: number;
@@ -29,7 +28,6 @@ export const SelectAll = ({
         </div>
         <div className="text-sm text-neutral-500">{selectedCount} selected</div>
       </div>
-      <Separator className="opacity-50" />
     </div>
   );
 };

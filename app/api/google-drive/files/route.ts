@@ -22,8 +22,6 @@ export async function GET(request: Request) {
       );
     }
 
-    console.log("===============>>>>> SESSION CONNECTION ID", session);
-
     // Get files
     const { data: files } = await apiClient.get<GoogleDriveFilesResponse>(
       `/connections/${session.connection.connectionId}/resources/children${

@@ -1,17 +1,15 @@
-import { Header } from "./components/Header";
+"use client";
+
 import { KnowledgeBaseWizard } from "./components/KnowledgeBaseWizard";
+import { KnowledgeBaseView } from "./components/KnowledgeBaseWizard/KnowledgeBaseView";
+import { useLocalKnowledgeBaseStore } from "./stores/local-knowledge-base";
 
 export default function Home() {
-  return (
-    <div className="flex flex-col gap-4 p-16 max-w-screen-lg mx-auto">
-      <div className="flex flex-col gap-6">
-        <Header
-          title="Google Drive"
-          icon="/connections/drive-logo.svg"
-          isBeta
-        />
-        <KnowledgeBaseWizard />
-      </div>
-    </div>
-  );
+  const { knowledgeBaseId } = useLocalKnowledgeBaseStore();
+
+  if (knowledgeBaseId) {
+    return <KnowledgeBaseView />;
+  }
+
+  return <KnowledgeBaseWizard />;
 }

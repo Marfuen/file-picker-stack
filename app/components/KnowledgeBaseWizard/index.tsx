@@ -1,51 +1,43 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { PickFiles } from "../GoogleDrive/PickFiles";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useKnowledgeBase } from "@/app/hooks/useKnowledgeBase";
-import { KnowledgeBaseView } from "@/app/components/KnowledgeBaseWizard/KnowledgeBaseView";
+import { EmptyState } from "@/app/components/EmptyState";
+
+enum WizardStep {
+  EMPTY_STATE = 1,
+  PICK_FILES = 2,
+}
 
 export function KnowledgeBaseWizard() {
-  const [activeTab, setActiveTab] = useState<string>("select");
   const [isCreatingKnowledgeBase, setIsCreatingKnowledgeBase] = useState(false);
-  const { getStoredKnowledgeBaseId } = useKnowledgeBase();
-  const hasKnowledgeBase = getStoredKnowledgeBaseId() !== null;
-
-  // If we have a knowledge base, start on the view tab
-  useEffect(() => {
-    if (hasKnowledgeBase) {
-      setActiveTab("view");
-    }
-  }, [hasKnowledgeBase]);
+  const [currentStep, setCurrentStep] = useState<WizardStep>(
+    WizardStep.EMPTY_STATE
+  );
 
   const handleCreateKnowledgeBase = async (callback: () => Promise<void>) => {
     setIsCreatingKnowledgeBase(true);
     try {
       await callback();
-      setActiveTab("view");
     } finally {
       setIsCreatingKnowledgeBase(false);
     }
   };
 
-  return (
-    <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-      <TabsList className="grid w-full grid-cols-2">
-        <TabsTrigger value="select">Select Files</TabsTrigger>
-        <TabsTrigger value="view" disabled={!hasKnowledgeBase}>
-          Knowledge Base
-        </TabsTrigger>
-      </TabsList>
-      <TabsContent value="select" className="mt-4">
+  const handleContinue = () => {
+    setCurrentStep(WizardStep.PICK_FILES);
+  };
+
+  // Show the appropriate step
+  switch (currentStep) {
+    case WizardStep.EMPTY_STATE:
+      return <EmptyState onContinue={handleContinue} />;
+    case WizardStep.PICK_FILES:
+      return (
         <PickFiles
           onCreateKnowledgeBase={handleCreateKnowledgeBase}
           isCreatingKnowledgeBase={isCreatingKnowledgeBase}
         />
-      </TabsContent>
-      <TabsContent value="view" className="mt-4">
-        <KnowledgeBaseView />
-      </TabsContent>
-    </Tabs>
-  );
+      );
+  }
 }

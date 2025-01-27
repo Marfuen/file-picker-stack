@@ -1,90 +1,66 @@
-"use client";
+import useSWR from "swr";
+import { useLocalKnowledgeBaseStore } from "@/app/stores/local-knowledge-base";
 
-import { useState, useCallback } from "react";
-import { useKnowledgeBase } from "./useKnowledgeBase";
-import { GoogleDriveFile } from "@/app/types/google-drive";
-import axios from "axios";
-
-interface FolderCache {
-  [nodeId: string]: {
-    contents: GoogleDriveFile[];
+export interface KnowledgeBaseFile {
+  resource_id: string;
+  inode_id: string;
+  inode_path: {
     path: string;
   };
+  inode_type: "file" | "directory";
+  mime_type?: string;
+  size?: number;
+  last_modified?: string;
 }
 
-export function useKnowledgeBaseFiles() {
-  const [folderCache, setFolderCache] = useState<FolderCache>({});
-  const [loadingFolders, setLoadingFolders] = useState<Set<string>>(new Set());
-  const { getStoredKnowledgeBaseId } = useKnowledgeBase();
-  const knowledgeBaseId = getStoredKnowledgeBaseId();
+interface UseKnowledgeBaseFilesParams {
+  path?: string;
+  filterByParent?: boolean;
+}
 
-  const loadFolderContents = useCallback(
-    async (nodeId: string, path: string) => {
-      // Check the cache
-      const cached = folderCache[nodeId];
-      if (cached && cached.path === path) {
-        return cached.contents;
-      }
+interface UseKnowledgeBaseFilesError {
+  error: string;
+  status?: number;
+}
 
-      // If we're already loading this folder, wait for it
-      if (loadingFolders.has(nodeId)) {
-        return folderCache[nodeId]?.contents || [];
-      }
+const fetcher = async (url: string) => {
+  const response = await fetch(url);
+  if (!response.ok) {
+    const error = await response.json();
+    throw {
+      error: error.error || "Failed to fetch files",
+      status: response.status,
+    };
+  }
+  return response.json();
+};
 
-      setLoadingFolders((prev) => new Set([...prev, nodeId]));
+export function useKnowledgeBaseFiles({
+  path,
+  filterByParent = false,
+}: UseKnowledgeBaseFilesParams = {}) {
+  const { knowledgeBaseId } = useLocalKnowledgeBaseStore();
+  const queryParams = new URLSearchParams();
+  if (path) queryParams.set("resourcePath", path);
+  if (filterByParent) queryParams.set("filterByParent", "true");
 
-      try {
-        // Fetch directly from the API instead of using listFiles
-        const { data } = await axios.get<{ data: GoogleDriveFile[] }>(
-          `/api/knowledge-base/${knowledgeBaseId}/files?resourcePath=${encodeURIComponent(
-            path
-          )}`
-        );
-
-        const contents = data.data || [];
-
-        // Cache the results
-        setFolderCache((prev) => ({
-          ...prev,
-          [nodeId]: {
-            contents,
-            path,
-          },
-        }));
-
-        return contents;
-      } catch (error) {
-        console.error("Error loading knowledge base folder contents:", error);
-        return [];
-      } finally {
-        setLoadingFolders((prev) => {
-          const next = new Set(prev);
-          next.delete(nodeId);
-          return next;
-        });
-      }
-    },
-    [knowledgeBaseId, folderCache]
+  const { data, error, isLoading, mutate } = useSWR<
+    KnowledgeBaseFile[],
+    UseKnowledgeBaseFilesError
+  >(
+    knowledgeBaseId
+      ? `/api/knowledge-base/${knowledgeBaseId}/files?${queryParams.toString()}`
+      : null,
+    fetcher
   );
 
-  const clearCache = useCallback(() => {
-    setFolderCache({});
-  }, []);
-
-  const isLoading = useCallback(
-    (nodeId: string) => loadingFolders.has(nodeId),
-    [loadingFolders]
-  );
-
-  const getFolderContents = useCallback(
-    (nodeId: string) => folderCache[nodeId]?.contents,
-    [folderCache]
-  );
+  const isUnauthorized = error?.status === 401;
 
   return {
-    loadFolderContents,
-    clearCache,
+    files: data || [],
+    error,
     isLoading,
-    getFolderContents,
+    isUnauthorized,
+    mutate,
   };
 }

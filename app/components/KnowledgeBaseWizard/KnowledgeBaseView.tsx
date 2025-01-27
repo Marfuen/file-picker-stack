@@ -1,51 +1,40 @@
 "use client";
 
 import { useKnowledgeBase } from "@/app/hooks/useKnowledgeBase";
+import { useKnowledgeBaseFiles } from "@/app/hooks/useKnowledgeBaseFiles";
 import { FileTree } from "../GoogleDrive/PickFiles/FileTree";
-import { useState, useCallback } from "react";
-import { FileNode } from "@/app/types/google-drive-ui";
-import { Loader2 } from "lucide-react";
-import { GoogleDriveFile } from "@/app/types/google-drive";
+import { useCallback } from "react";
+import { Loader2, MoreVertical, Trash } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
+import { useKnowledgeBaseMutations } from "@/app/hooks/useKnowledgeBaseMutations";
+import { useKnowledgeBaseFolders } from "@/app/hooks/useKnowledgeBaseFolders";
+import { useKnowledgeBaseFileActions } from "@/app/hooks/useKnowledgeBaseFileActions";
 
 export function KnowledgeBaseView() {
-  const { files, isLoading, error } = useKnowledgeBase();
-  const [folderContents, setFolderContents] = useState<
-    Record<string, GoogleDriveFile[]>
-  >({});
-  const [selectedFiles, setSelectedFiles] = useState<Set<string>>(new Set());
+  const { knowledgeBaseId } = useKnowledgeBase();
+  const { deleteFile, isLoading: isDeleting } = useKnowledgeBaseFileActions();
+  const { deleteKnowledgeBase } = useKnowledgeBaseMutations();
+  const { clearCache } = useKnowledgeBaseFolders();
+  const { files, isLoading, error: filesError } = useKnowledgeBaseFiles({});
 
-  const handleFolderLoad = useCallback(
-    (resourceId: string, contents: GoogleDriveFile[]) => {
-      setFolderContents((prev) => ({
-        ...prev,
-        [resourceId]: contents,
-      }));
+  const handleFileDeleted = useCallback(
+    async (resourceId: string, path: string) => {
+      try {
+        await deleteFile(path);
+        clearCache();
+      } catch (error) {
+        console.error("Error deleting file:", error);
+      }
     },
-    []
+    [deleteFile, clearCache]
   );
-
-  const handleSelect = useCallback(
-    (node: FileNode, resourceId: string, checked: boolean) => {
-      setSelectedFiles((prev) => {
-        const next = new Set(prev);
-        if (checked) {
-          next.add(resourceId);
-        } else {
-          next.delete(resourceId);
-        }
-        return next;
-      });
-    },
-    []
-  );
-
-  const handleFileDeleted = useCallback((resourceId: string) => {
-    setSelectedFiles((prev) => {
-      const next = new Set(prev);
-      next.delete(resourceId);
-      return next;
-    });
-  }, []);
 
   if (isLoading) {
     return (
@@ -57,11 +46,13 @@ export function KnowledgeBaseView() {
     );
   }
 
-  if (error) {
+  if (filesError) {
+    const errorMessage =
+      filesError instanceof Error ? filesError.message : filesError.error;
     return (
       <div className="flex flex-col gap-4 px-2">
         <div className="text-destructive">
-          Error loading knowledge base: {error.message}
+          Error loading knowledge base: {errorMessage}
         </div>
       </div>
     );
@@ -69,15 +60,51 @@ export function KnowledgeBaseView() {
 
   return (
     <div className="flex flex-col gap-4 px-2">
-      <FileTree
-        files={files as unknown as GoogleDriveFile[]}
-        selectedFiles={selectedFiles}
-        onSelect={handleSelect}
-        folderContents={folderContents}
-        onFolderLoad={handleFolderLoad}
-        onFileDeleted={handleFileDeleted}
-        isKnowledgeBase={true}
-      />
+      <div className="flex flex-col gap-2">
+        <h1 className="text-2xl font-bold">Manage Your Knowledge Base</h1>
+        <p className="text-sm text-muted-foreground">
+          View and manage your knowledge base. You can de-index files from this
+          knowledge base.
+        </p>
+      </div>
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle>
+            <div className="flex flex-col gap-1">
+              <h1 className="text-xl font-bold">Knowledge Base</h1>
+              <p className="text-[10px] text-muted-foreground font-mono p-1 bg-muted rounded-md">
+                ID: {knowledgeBaseId}
+              </p>
+            </div>
+          </CardTitle>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon">
+                <MoreVertical className="h-4 w-4" />
+                <span className="sr-only">Open menu</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem
+                className="text-destructive cursor-pointer"
+                onClick={deleteKnowledgeBase}
+              >
+                <Trash className="mr-2 h-4 w-4" />
+                Delete Knowledge Base
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </CardHeader>
+        <CardContent>
+          <FileTree
+            files={files}
+            onSelect={() => {}}
+            onFileDeleted={handleFileDeleted}
+            processingFiles={isDeleting ? new Set([]) : undefined}
+            isKnowledgeBase
+          />
+        </CardContent>
+      </Card>
     </div>
   );
 }

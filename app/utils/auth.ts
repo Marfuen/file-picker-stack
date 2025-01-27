@@ -15,7 +15,21 @@ if (!process.env.PASSWORD) {
   throw new Error("PASSWORD is not set");
 }
 
+interface AuthCache {
+  token: string;
+  expiresAt: number;
+}
+
+let authCache: AuthCache | null = null;
+
 export async function getAuthHeaders(): Promise<{ Authorization: string }> {
+  // Check if we have a valid cached token
+  if (authCache && authCache.expiresAt > Date.now()) {
+    return {
+      Authorization: `Bearer ${authCache.token}`,
+    };
+  }
+
   console.log("[getAuthHeaders] Starting authentication process");
 
   try {
@@ -34,6 +48,12 @@ export async function getAuthHeaders(): Promise<{ Authorization: string }> {
         },
       }
     );
+
+    // Cache the token with expiration (subtract 5 minutes for safety)
+    authCache = {
+      token: response.data.access_token,
+      expiresAt: Date.now() + response.data.expires_in * 1000 - 5 * 60 * 1000,
+    };
 
     console.log("[getAuthHeaders] Authentication successful");
     return {

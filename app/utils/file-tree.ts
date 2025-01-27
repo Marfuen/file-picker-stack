@@ -1,18 +1,34 @@
-import { FileNode } from "../types/google-drive-ui";
-import { GoogleDriveFile } from "../types/google-drive";
+import {
+  FileSystemNode,
+  FileTreeNode,
+  KnowledgeBaseNode,
+} from "../types/file-system";
 
 /**
- * Builds a tree structure from an array of Google Drive files.
+ * Creates a directory node with the given path
+ */
+function createDirectoryNode(path: string): KnowledgeBaseNode {
+  return {
+    resource_id: `dir_${path}`,
+    inode_path: { path },
+    inode_type: "directory",
+    inode_id: "",
+    size: 0,
+  };
+}
+
+/**
+ * Builds a tree structure from an array of files.
  * Each node in the tree represents either a file or directory.
  *
- * @param files - Array of GoogleDriveFile objects to build the tree from
+ * @param files - Array of file objects to build the tree from
  * @returns An object representing the root of the file tree, where keys are file/folder names
- *          and values are FileNode objects containing the file data and any children
+ *          and values are FileTreeNode objects containing the file data and any children
  */
-export function buildFileTree(files: GoogleDriveFile[]): {
-  [key: string]: FileNode;
+export function buildFileTree(files: FileSystemNode[]): {
+  [key: string]: FileTreeNode;
 } {
-  const root: { [key: string]: FileNode } = {};
+  const root: { [key: string]: FileTreeNode } = {};
 
   files.forEach((file) => {
     const pathParts = file.inode_path.path.split("/").filter(Boolean);
@@ -26,14 +42,7 @@ export function buildFileTree(files: GoogleDriveFile[]): {
 
       if (!currentLevel[part]) {
         currentLevel[part] = {
-          file: isLastPart
-            ? file
-            : {
-                resource_id: `dir_${currentPath}`,
-                inode_path: { path: currentPath },
-                inode_type: "directory",
-                inode_id: "",
-              },
+          file: isLastPart ? file : createDirectoryNode(currentPath),
           children: {},
         };
       }
@@ -51,13 +60,13 @@ export function buildFileTree(files: GoogleDriveFile[]): {
  * Gets all file and directory paths from a file tree.
  * Recursively traverses the tree to collect all paths.
  *
- * @param files - Array of GoogleDriveFile objects to extract paths from
+ * @param files - Array of file objects to extract paths from
  * @returns A Set containing all unique file and directory paths
  */
-export function getAllPaths(files: GoogleDriveFile[]): Set<string> {
+export function getAllPaths(files: FileSystemNode[]): Set<string> {
   const paths = new Set<string>();
 
-  function traverse(file: GoogleDriveFile) {
+  function traverse(file: FileSystemNode) {
     paths.add(file.inode_path.path);
   }
 
@@ -88,12 +97,12 @@ export function formatFileSize(bytes: number): string {
 /**
  * Sorts an array of file nodes by type (directories first) and then by path.
  *
- * @param nodes - Array of tuples containing the node name and FileNode object
- * @returns Sorted array of [string, FileNode] tuples
+ * @param nodes - Array of tuples containing the node name and FileTreeNode object
+ * @returns Sorted array of [string, FileTreeNode] tuples
  */
 export function sortFileNodes(
-  nodes: [string, FileNode][]
-): [string, FileNode][] {
+  nodes: [string, FileTreeNode][]
+): [string, FileTreeNode][] {
   return nodes.sort(([, a], [, b]) => {
     if (a.file.inode_type === b.file.inode_type) {
       return a.file.inode_path.path.localeCompare(b.file.inode_path.path);
@@ -102,10 +111,17 @@ export function sortFileNodes(
   });
 }
 
-export function getAllResourceIds(files: GoogleDriveFile[]): Set<string> {
+/**
+ * Gets all resource IDs from a file tree.
+ * Recursively traverses the tree to collect all IDs.
+ *
+ * @param files - Array of file objects to extract IDs from
+ * @returns A Set containing all unique resource IDs
+ */
+export function getAllResourceIds(files: FileSystemNode[]): Set<string> {
   const resourceIds = new Set<string>();
 
-  function traverse(file: GoogleDriveFile) {
+  function traverse(file: FileSystemNode) {
     resourceIds.add(file.resource_id);
   }
 
