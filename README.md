@@ -1,36 +1,55 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
-
 ## Getting Started
 
-First, run the development server:
+To run locally
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+bun install && bun run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Then just open [http://localhost:3000](http://localhost:3000) in your browser and you're set.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Tech Stack
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Here's what I used to build this:
 
-## Learn More
+- **Next.js 15** with App Router for better routing and SSR
+- **TypeScript** for type safety
+- **Shadcn UI** for accessible components
+- **Tailwind CSS** for styling
+- **SWR** for data fetching
+- **Zustand** for state management
+- **Axios** for API calls
 
-To learn more about Next.js, take a look at the following resources:
+## How I Built It
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Frontend Organization
+- Reusable UI in `components/ui`
+- App components in `app/components`
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Auth & API
+- Token auth with cookies
+- Automatic token refresh
+- Rate limiting and error handling
 
-## Deploy on Vercel
+#### Display
+- `FileTree`: Main container
+- `FileTreeDirectory`: Folder handling
+- `FileTreeFile`: File display
+- Lazy loading for better performance
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+#### Data Management
+- `useFileTree` hook for state
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### Why I Split the Views
+
+Basically, I separated the views into two because I felt like having one single tree that has to handle both states would be too convoluted, and also a bit feature bloated for the user.
+
+### Single Knowledge Base
+
+Since I didn't have access to and endpoint to list all knowledge bases or get a single one, I decided to just store the knowledge base in local storage. Obviously it was for the constrains of this project, in production we would use a database and properly manage multiple connections/knowledge bases.
+
+## Deployment
+
+Deploy on [Vercel](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create_next_app&utm_campaign=create_next_app_readme) - they built Next.js.
+
+Need more info? Check the [deployment docs](https://nextjs.org/docs/app/building-your-application/deploying).
