@@ -1,10 +1,11 @@
 "use client";
 
-import { useKnowledgeBase } from "@/app/hooks/useKnowledgeBase";
+import { useKnowledgeBaseFileActions } from "@/app/hooks/useKnowledgeBaseFileActions";
 import { useKnowledgeBaseFiles } from "@/app/hooks/useKnowledgeBaseFiles";
-import { FileTree } from "../GoogleDrive/PickFiles/FileTree";
-import { useCallback } from "react";
-import { Loader2, MoreVertical, Trash } from "lucide-react";
+import { useKnowledgeBaseFolders } from "@/app/hooks/useKnowledgeBaseFolders";
+import { useKnowledgeBaseMutations } from "@/app/hooks/useKnowledgeBaseMutations";
+import { useLocalKnowledgeBaseStore } from "@/app/stores/local-knowledge-base";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   DropdownMenu,
@@ -12,28 +13,29 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Button } from "@/components/ui/button";
-import { useKnowledgeBaseMutations } from "@/app/hooks/useKnowledgeBaseMutations";
-import { useKnowledgeBaseFolders } from "@/app/hooks/useKnowledgeBaseFolders";
-import { useKnowledgeBaseFileActions } from "@/app/hooks/useKnowledgeBaseFileActions";
+import { Loader2, MoreVertical, Trash } from "lucide-react";
+import { useCallback } from "react";
+import { FileTree } from "../GoogleDrive/PickFiles/FileTree";
 
 export function KnowledgeBaseView() {
-  const { knowledgeBaseId } = useKnowledgeBase();
+  const { knowledgeBaseId } = useLocalKnowledgeBaseStore();
   const { deleteFile, isLoading: isDeleting } = useKnowledgeBaseFileActions();
   const { deleteKnowledgeBase } = useKnowledgeBaseMutations();
   const { clearCache } = useKnowledgeBaseFolders();
   const { files, isLoading, error: filesError } = useKnowledgeBaseFiles({});
+  const { mutate } = useKnowledgeBaseFiles();
 
   const handleFileDeleted = useCallback(
-    async (resourceId: string, path: string) => {
+    async (_resourceId: string, path: string) => {
       try {
         await deleteFile(path);
+        mutate();
         clearCache();
       } catch (error) {
         console.error("Error deleting file:", error);
       }
     },
-    [deleteFile, clearCache]
+    [deleteFile, clearCache, mutate]
   );
 
   if (isLoading) {

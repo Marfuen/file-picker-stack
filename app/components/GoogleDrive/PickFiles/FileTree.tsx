@@ -1,14 +1,13 @@
 "use client";
 
+import { useFileTree } from "@/app/hooks/useFileTree";
+import { useLocalKnowledgeBaseStore } from "@/app/stores/local-knowledge-base";
+import { BaseFileTreeProps, FileTreeNode } from "@/app/types/file-system";
 import { buildFileTree, sortFileNodes } from "@/app/utils/file-tree";
 import { Accordion } from "@/components/ui/accordion";
-import { useCallback } from "react";
-import { useKnowledgeBase } from "@/app/hooks/useKnowledgeBase";
-import { useFileTree } from "@/app/hooks/useFileTree";
+import { useCallback, type ReactElement } from "react";
 import { FileTreeDirectory } from "./FileTreeDirectory";
 import { FileTreeFile } from "./FileTreeFile";
-import { type ReactElement } from "react";
-import { BaseFileTreeProps, FileTreeNode } from "@/app/types/file-system";
 
 interface FileTreeProps extends BaseFileTreeProps {
   onKnowledgeBaseFilesLoad?: (path: string, fileIds: Set<string>) => void;
@@ -23,7 +22,7 @@ export function FileTree({
   onFileDeleted,
   isKnowledgeBase = false,
 }: FileTreeProps): ReactElement {
-  const { knowledgeBaseId } = useKnowledgeBase();
+  const { knowledgeBaseId } = useLocalKnowledgeBaseStore();
   const {
     openFolders,
     getNodeId,

@@ -20,11 +20,6 @@ export const Header: React.FC<HeaderProps> = ({ title, isBeta, icon }) => {
             </div>
           )}
         </div>
-        {/* Not supported in this project since we're not actually adding accounts */}
-        {/* <Button variant="secondary">
-          <Plus className="w-4 h-4" />
-          Add account
-        </Button> */}
       </div>
       <Separator />
     </div>

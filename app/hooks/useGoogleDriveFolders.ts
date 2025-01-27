@@ -56,7 +56,7 @@ export function useGoogleDriveFolders() {
         });
       }
     },
-    [folderCache]
+    [folderCache, loadingFolders]
   );
 
   const clearCache = useCallback(() => {

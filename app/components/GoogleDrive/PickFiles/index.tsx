@@ -1,16 +1,16 @@
 "use client";
 
-import { useState, useCallback } from "react";
-import { FileList } from "./FileList";
-import { SelectAll } from "./SelectAll";
 import { useGoogleDriveFiles } from "@/app/hooks/useGoogleDriveFiles";
-import { useKnowledgeBase } from "@/app/hooks/useKnowledgeBase";
+import { useKnowledgeBaseActions } from "@/app/hooks/useKnowledgeBaseActions";
+import { useLocalKnowledgeBaseStore } from "@/app/stores/local-knowledge-base";
+import { FileTreeNode } from "@/app/types/file-system";
 import { getAllResourceIds } from "@/app/utils/file-tree";
 import { Button } from "@/components/ui/button";
-import { Loader2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useKnowledgeBaseActions } from "@/app/hooks/useKnowledgeBaseActions";
-import { FileTreeNode } from "@/app/types/file-system";
+import { Loader2 } from "lucide-react";
+import { useCallback, useState } from "react";
+import { FileList } from "./FileList";
+import { SelectAll } from "./SelectAll";
 
 export interface PickFilesProps {
   onCreateKnowledgeBase: (callback: () => Promise<void>) => Promise<void>;
@@ -30,7 +30,7 @@ export function PickFiles({
 
   // Hooks
   const { files, isLoading, error: filesError } = useGoogleDriveFiles();
-  const { knowledgeBaseId } = useKnowledgeBase();
+  const { knowledgeBaseId } = useLocalKnowledgeBaseStore();
   const { createKnowledgeBase } = useKnowledgeBaseActions();
 
   // Handlers
