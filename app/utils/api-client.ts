@@ -16,6 +16,7 @@ class ApiClient {
       headers: {
         "Content-Type": "application/json",
       },
+      timeout: 300000, // 300 seconds (5 minutes)
     });
 
     // Add response interceptor to handle token expiration
