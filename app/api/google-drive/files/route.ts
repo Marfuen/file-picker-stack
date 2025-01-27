@@ -3,7 +3,7 @@
 import { GoogleDriveFilesResponse } from "@/app/types/google-drive";
 import { apiClient } from "@/app/utils/api-client";
 import { getSession } from "@/app/utils/session";
-import { NextResponse } from "next/server";
+import { createApiResponse, handleApiError } from "@/app/utils/api-helpers";
 
 export async function GET(request: Request) {
   try {
@@ -16,10 +16,7 @@ export async function GET(request: Request) {
     const session = await getSession();
 
     if (!session.connection) {
-      return NextResponse.json(
-        { error: "Google Drive connection not found" },
-        { status: 404 }
-      );
+      throw new Error("Google Drive connection not found");
     }
 
     // Get files
@@ -38,18 +35,8 @@ export async function GET(request: Request) {
         : bPath.localeCompare(aPath);
     });
 
-    return NextResponse.json(sortedFiles);
+    return createApiResponse(sortedFiles);
   } catch (error) {
-    console.error("Error fetching files:", error);
-
-    if (error instanceof Error) {
-      const status = error.message.includes("Authentication") ? 401 : 500;
-      return NextResponse.json({ error: error.message }, { status });
-    }
-
-    return NextResponse.json(
-      { error: "Failed to fetch files" },
-      { status: 500 }
-    );
+    return handleApiError(error);
   }
 }

@@ -1,30 +1,44 @@
-import { NextResponse } from "next/server";
 import { getSession } from "@/app/utils/session";
 import { apiClient } from "@/app/utils/api-client";
 import { KnowledgeBaseResponse } from "@/app/types/knowledge-base";
+import { createApiResponse, handleApiError } from "@/app/utils/api-helpers";
+import { AxiosResponse } from "axios";
 
 export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url);
-  const knowledgeBaseId = searchParams.get("knowledgeBaseId");
-  const { data: knowledgeBase } = await apiClient.get<KnowledgeBaseResponse>(
-    `/knowledge_bases/${knowledgeBaseId}`
-  );
-  console.log("[GET] knowledgeBase", knowledgeBase);
-  return NextResponse.json(knowledgeBase);
+  try {
+    const { searchParams } = new URL(request.url);
+    const knowledgeBaseId = searchParams.get("knowledgeBaseId");
+
+    if (!knowledgeBaseId) {
+      throw new Error("knowledgeBaseId is required");
+    }
+
+    const { data: knowledgeBase } = await apiClient.get<
+      AxiosResponse<KnowledgeBaseResponse>
+    >(`/knowledge_bases/${knowledgeBaseId}`);
+    return createApiResponse(knowledgeBase.data);
+  } catch (error) {
+    return handleApiError(error);
+  }
 }
 
 export async function POST(request: Request) {
   try {
     const session = await getSession();
     if (!session.connection) {
-      return NextResponse.json(
-        { error: "Google Drive connection not found" },
-        { status: 404 }
-      );
+      throw new Error("Google Drive connection not found");
     }
 
     const body = await request.json();
     const { connectionSourceIds, name, description } = body;
+
+    if (!connectionSourceIds?.length) {
+      throw new Error("connectionSourceIds is required");
+    }
+
+    if (!name) {
+      throw new Error("name is required");
+    }
 
     // Create knowledge base
     const data = {
@@ -57,18 +71,8 @@ export async function POST(request: Request) {
       `/knowledge_bases/sync/trigger/${knowledgeBase.knowledge_base_id}/${session.orgId}`
     );
 
-    return NextResponse.json(knowledgeBase);
+    return createApiResponse(knowledgeBase);
   } catch (error) {
-    console.error("Error creating knowledge base:", error);
-
-    if (error instanceof Error) {
-      const status = error.message.includes("Authentication") ? 401 : 500;
-      return NextResponse.json({ error: error.message }, { status });
-    }
-
-    return NextResponse.json(
-      { error: "Failed to create knowledge base" },
-      { status: 500 }
-    );
+    return handleApiError(error);
   }
 }

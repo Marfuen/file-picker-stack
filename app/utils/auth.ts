@@ -30,10 +30,7 @@ export async function getAuthHeaders(): Promise<{ Authorization: string }> {
     };
   }
 
-  console.log("[getAuthHeaders] Starting authentication process");
-
   try {
-    console.log("[getAuthHeaders] Making authentication request to Supabase");
     const response = await axios.post(
       `${process.env.SUPABASE_AUTH_URL}/auth/v1/token?grant_type=password`,
       {
@@ -55,7 +52,6 @@ export async function getAuthHeaders(): Promise<{ Authorization: string }> {
       expiresAt: Date.now() + response.data.expires_in * 1000 - 5 * 60 * 1000,
     };
 
-    console.log("[getAuthHeaders] Authentication successful");
     return {
       Authorization: `Bearer ${response.data.access_token}`,
     };
