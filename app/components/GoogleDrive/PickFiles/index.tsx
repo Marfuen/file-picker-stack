@@ -117,7 +117,7 @@ export function PickFiles({
   // Loading state
   if (isLoading) {
     return (
-      <div className="flex flex-col gap-4 px-2">
+      <div className="flex flex-col gap-4 p-4 md:px-2">
         <div className="flex items-center justify-center">
           <Loader2 className="h-4 w-4 animate-spin" />
         </div>
@@ -128,7 +128,7 @@ export function PickFiles({
   // Error state
   if (filesError) {
     return (
-      <div className="flex flex-col gap-4 px-2">
+      <div className="flex flex-col gap-4 p-4 md:px-2">
         <div className="text-destructive">
           Error loading files: {filesError.error}
         </div>
@@ -148,9 +148,9 @@ export function PickFiles({
   );
 
   return (
-    <div className="flex flex-col gap-4 px-2">
+    <div className="flex flex-col gap-4 p-4 md:px-2">
       <div className="flex flex-col gap-2">
-        <h1 className="text-2xl font-bold">
+        <h1 className="text-xl md:text-2xl font-bold">
           Pick files from your Google Drive
         </h1>
         <p className="text-sm text-muted-foreground">
@@ -160,7 +160,7 @@ export function PickFiles({
       </div>
       <Card>
         <CardHeader>
-          <CardTitle>Files</CardTitle>
+          <CardTitle className="text-lg md:text-xl">Files</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-2">
           <SelectAll
@@ -180,6 +180,7 @@ export function PickFiles({
       <Button
         onClick={handleAddOrCreateKnowledgeBase}
         disabled={selectedFiles.size === 0 || isCreatingKnowledgeBase}
+        className="w-full md:w-auto"
       >
         {buttonText}
       </Button>

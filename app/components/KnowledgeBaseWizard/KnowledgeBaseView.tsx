@@ -40,7 +40,7 @@ export function KnowledgeBaseView() {
 
   if (isLoading) {
     return (
-      <div className="flex flex-col gap-4 px-2">
+      <div className="flex flex-col gap-4 p-4 md:px-2">
         <div className="flex items-center justify-center">
           <Loader2 className="h-4 w-4 animate-spin" />
         </div>
@@ -52,7 +52,7 @@ export function KnowledgeBaseView() {
     const errorMessage =
       filesError instanceof Error ? filesError.message : filesError.error;
     return (
-      <div className="flex flex-col gap-4 px-2">
+      <div className="flex flex-col gap-4 p-4 md:px-2">
         <div className="text-destructive">
           Error loading knowledge base: {errorMessage}
         </div>
@@ -61,27 +61,33 @@ export function KnowledgeBaseView() {
   }
 
   return (
-    <div className="flex flex-col gap-4 px-2">
+    <div className="flex flex-col gap-4 p-4 md:px-2">
       <div className="flex flex-col gap-2">
-        <h1 className="text-2xl font-bold">Manage Your Knowledge Base</h1>
+        <h1 className="text-xl md:text-2xl font-bold">
+          Manage Your Knowledge Base
+        </h1>
         <p className="text-sm text-muted-foreground">
           View and manage your knowledge base. You can de-index files from this
           knowledge base.
         </p>
       </div>
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardHeader className="flex flex-col md:flex-row items-start md:items-center justify-between space-y-2 md:space-y-0 pb-2 relative">
           <CardTitle>
             <div className="flex flex-col gap-1">
-              <h1 className="text-xl font-bold">Knowledge Base</h1>
-              <p className="text-[10px] text-muted-foreground font-mono p-1 bg-muted rounded-md">
+              <h1 className="text-lg md:text-xl font-bold">Knowledge Base</h1>
+              <p className="text-[10px] text-muted-foreground font-mono p-1 bg-muted rounded-md break-all">
                 ID: {knowledgeBaseId}
               </p>
             </div>
           </CardTitle>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="md:mt-0 absolute md:relative right-2 top-2 md:right-auto md:top-auto"
+              >
                 <MoreVertical className="h-4 w-4" />
                 <span className="sr-only">Open menu</span>
               </Button>

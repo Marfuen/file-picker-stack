@@ -60,7 +60,7 @@ export function FileTreeDirectory({
     <AccordionItem value={nodeId} key={nodeId} className="border-none">
       <AccordionTrigger
         className={cn(
-          "hover:no-underline py-0 [&>svg]:hidden group w-full cursor-pointer p-2",
+          "hover:no-underline py-0 [&>svg]:hidden group w-full cursor-pointer p-1 md:p-2",
           isSelected && "bg-muted"
         )}
         onClick={(e) => {
